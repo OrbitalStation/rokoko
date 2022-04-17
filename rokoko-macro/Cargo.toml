@@ -1,0 +1,18 @@
+[package]
+name = "rokoko-macro"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies.syn]
+version = "1"
+features = ["full"]
+optional = true
+
+[features]
+#
+# Switch `nightly*` macro mode
+#
+nightly = ["dep:syn"]

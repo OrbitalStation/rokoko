@@ -1,0 +1,24 @@
+[package]
+name = "rokoko"
+version = "0.0.0"
+
+[dependencies]
+cfg-if = "1"
+
+[dependencies.rokoko-macro]
+path = "rokoko-macro"
+
+[features]
+default = ["math"]
+
+#
+# Adds `const` qualifier to some functions.
+#
+# Requires nightly rust.
+#
+nightly = ["rokoko-macro/nightly"]
+
+#
+# Provides convenient mathematical types, functions, etc.
+#
+math = []
