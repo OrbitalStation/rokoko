@@ -2,6 +2,7 @@
 // This module provides macros for `rokoko::math::vec`
 //
 
+/*
 ///
 /// This macro implements different aliases for `vec`.
 ///
@@ -80,8 +81,11 @@ pub fn impl_aliases_for_vec(input: TokenStream) -> TokenStream {
         }
     };
 
-    iter.collect::<Vec <_>>().join("\n").parse().unwrap()
+    let k = iter.collect::<Vec <_>>().join("\n");
+    println!("{k}");
+    k.parse().unwrap()
 }
+ */
 
 ///
 /// This macro implements different operators on `vec`.

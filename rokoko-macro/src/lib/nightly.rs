@@ -75,7 +75,7 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
     ///  ```
     ///
     #[cfg(feature = "nightly")]
-    fn r#const(mut args: &str, input: TokenStream) -> TokenStream {
+    fn r#const(args: &str, input: TokenStream) -> TokenStream {
         use syn::__private::ToTokens;
 
         #[derive(Default)]
@@ -122,7 +122,7 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
         //
         // Takes string `input`, finds generics and adds `const` requirements.
         //
-        let mut parse_and_add_requirements = move |input: String, precalc_generics: Generics| -> TokenStream {
+        let parse_and_add_requirements = move |input: String, precalc_generics: Generics| -> TokenStream {
             if !precalc_generics.exist() || args.is_empty() {
                 return input.parse().unwrap()
             }
@@ -231,17 +231,6 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
                 )
             }
 
-            // If force is enabled
-            if args.starts_with("force") {
-                if !cfg!(feature = "nightly") {
-                    return TokenStream::new();
-                }
-                args = args["force".len()..].trim();
-                if args.starts_with(',') {
-                    args = args[','.len_utf8()..].trim()
-                }
-            }
-
             let const_reqs = get_trait_reqs(args, false);
 
             let item_reqs = get_trait_reqs(&input[precalc_generics.open..precalc_generics.close], true);
@@ -259,7 +248,6 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
                 }
                 generics.push_str(&format!("{generic}: {},", traits.join("+")))
             }
-
             (input[..precalc_generics.open].to_string() + &generics + &input[precalc_generics.close..]).parse().unwrap()
         };
 
@@ -318,7 +306,19 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
         input
     }
 
-    cmds!("const": r#const);
+    cmds! {
+        // The difference between `const` and `const_force` is that
+        // if `nightly` is not enabled, `const` will leave item as it is,
+        // and `const_force` will remove it.
+        "const_force": |args, input| {
+            if cfg!(feature = "nightly") {
+                r#const(args, input)
+            } else {
+                TokenStream::new()
+            }
+        },
+        "const": r#const
+    }
 
     ///
     /// Called if `#[nightly]` is used.

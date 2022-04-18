@@ -1,7 +1,26 @@
 //!
 //! This module provides type `vec`
 //!
-//! TODO
+//! The `vec` type is a type with properties similar to those
+//! of `GLSL vec`.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use rokoko::prelude::*;
+//!
+//! let a = vec::<i32, 2>::from([1, 2]);
+//!
+//! // Aliases are also supported
+//! let b = ivec2::from([3, 4]);
+//!
+//! // Operators are overloaded
+//! assert_eq!(a + b, ivec2::from([4, 6]));
+//!
+//! // Possible from single value
+//! assert_eq!(a - b, ivec2::single(-2));
+//!
+//! ```
 //!
 
 mod ops;
@@ -129,9 +148,9 @@ impl <T, const N: usize> vec <T, N> {
     /// ```
     /// use rokoko::prelude::*;
     ///
-    /// let vec = vec::from_array([1, 2, 3]);
+    /// let mut vec = vec::from_array([1, 2, 3]);
     ///
-    /// let array = vec.as_mut_array();
+    /// let array = vec.as_array_mut();
     ///
     /// array[1] = 12;
     ///
@@ -181,7 +200,7 @@ impl <T, const N: usize> vec <T, N> {
     /// use rokoko::prelude::*;
     ///
     /// let vec = unsafe {
-    ///     let uninit = bvec3::uninit();
+    ///     let mut uninit = bvec3::uninit();
     ///     uninit[0] = true;
     ///     uninit[1] = false;
     ///     uninit[2] = false;

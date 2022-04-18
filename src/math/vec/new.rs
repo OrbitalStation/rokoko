@@ -9,6 +9,31 @@
 //!
 //! So, just in case, I'll leave this all `pub`.
 //!
+//! # Examples
+//!
+//! ```nightly
+//! use rokoko::prelude::*;
+//!
+//! // Basic form
+//! assert_eq!(ivec3::new(1, 2, 3), ivec3::from([1, 2, 3]));
+//!
+//! // Defaults
+//! assert_eq!(ivec3::new(7, 8), ivec3::from([7, 8, 0]));
+//!
+//! // Vecs can be used in arguments
+//! let v1 = bvec2::new(true, false);
+//! assert_eq!(bvec3::new(v1, false), bvec3::new(true, false, false));
+//!
+//! let position = fvec3::new(0.0, -0.5);
+//! assert_eq!(fvec4::new(position, 1.0), fvec4::new(0.0, -0.5, 0.0, 1.0));
+//!
+//! // Lists too
+//! assert_eq!(dvec4::new(27.27, [0.0], [[-1.17]], [[[3.0]], []]), dvec4::new(27.27, 0.0, -1.17, 3.0));
+//!
+//! // And even tuples(up to 10 elements)!
+//! assert_eq!(fvec3::new(0.1, (), ((), ()), (13.21, (((), ()))), f32::MIN), fvec3::new(0.1, 13.21, f32::MIN));
+//! ```
+//!
 
 use crate::nightly;
 use super::super::vec::vec;
@@ -146,7 +171,7 @@ impl <T, const N: usize> !NotArray for [T; N] {}
 ///
 /// Single type convertible to `T` can be used in `new`
 ///
-#[nightly(const(force, T: From <U>))]
+#[nightly(const_force(T: From <U>))]
 impl <T: From <U> + Copy, U: Copy + NotArray + NotTuple> Piece <T> for U {
     const N: usize = 1;
 
@@ -159,7 +184,7 @@ impl <T: From <U> + Copy, U: Copy + NotArray + NotTuple> Piece <T> for U {
 ///
 /// Array of convertible to `T` types can be used in `new`
 ///
-#[nightly(const(force, U: Piece <T>))]
+#[nightly(const_force(U: Piece <T>))]
 impl <T: Copy, U: Piece <T>, const N: usize> Piece <T> for [U; N] {
     const N: usize = N * U::N;
 
@@ -177,7 +202,7 @@ impl <T: Copy, U: Piece <T>, const N: usize> Piece <T> for [U; N] {
 ///
 /// Vec of convertible to `T` types can be used in `new`
 ///
-#[nightly(const(force, U: Piece <T>))]
+#[nightly(const_force(U: Piece <T>))]
 impl <T: Copy, U: Piece <T>, const N: usize> Piece <T> for vec <U, N> {
     const N: usize = N * U::N;
 
@@ -189,7 +214,7 @@ impl <T: Copy, U: Piece <T>, const N: usize> Piece <T> for vec <U, N> {
 
 pub struct New <T, const N: usize> (PhantomData <vec <T, N>>);
 
-#[nightly(const(force, Args: Piece <T>, T: Default))]
+#[nightly(const_force(Args: Piece <T>, T: Default))]
 impl <Args: Piece <T>, T: Default + Copy, const N: usize> FnOnce <Args> for New <T, N> {
     type Output = vec <T, N>;
 
@@ -199,7 +224,7 @@ impl <Args: Piece <T>, T: Default + Copy, const N: usize> FnOnce <Args> for New 
     }
 }
 
-#[nightly(const(force, Args: Piece <T>, T: Default))]
+#[nightly(const_force(Args: Piece <T>, T: Default))]
 impl <Args: Piece <T>, T: Default + Copy, const N: usize> FnMut <Args> for New <T, N> {
     #[inline(always)]
     extern "rust-call" fn call_mut(&mut self, args: Args) -> Self::Output {
@@ -207,7 +232,7 @@ impl <Args: Piece <T>, T: Default + Copy, const N: usize> FnMut <Args> for New <
     }
 }
 
-#[nightly(const(force, Args: Piece <T>, T: Default))]
+#[nightly(const_force(Args: Piece <T>, T: Default))]
 impl <Args: Piece <T>, T: Default + Copy, const N: usize> Fn <Args> for New <T, N> {
     extern "rust-call" fn call(&self, args: Args) -> Self::Output {
         assert!(Args::N <= N, "too many args");

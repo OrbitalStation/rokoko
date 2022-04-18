@@ -2,7 +2,6 @@
 //! This module provides various operators and other trait implementations for vec
 //!
 
-use alloc::format;
 use super::vec;
 use crate::nightly;
 use core::{
@@ -13,7 +12,8 @@ use core::{
 
 impl <T: fmt::Debug + Copy, const N: usize> fmt::Debug for vec <T, N> {
     fn fmt(&self, f: &mut fmt::Formatter <'_>) -> fmt::Result {
-        let mut tuple = f.debug_tuple(&format!("vec <{} x {N}> ", core::any::type_name::<T>()));
+        let type_name = core::any::type_name::<Self>();
+        let mut tuple = f.debug_tuple(&type_name[type_name.find("vec<").unwrap()..]);
         let mut i = 0;
         while i < N {
             tuple.field(unsafe { self.get_unchecked(i) });
@@ -61,7 +61,7 @@ impl <T, const N: usize> vec <T, N> {
     /// let x = vec::from_array([7, 2, 1]);
     ///
     /// unsafe {
-    ///     assert_eq!(x.get_unchecked(1), &7);
+    ///     assert_eq!(x.get_unchecked(1), &2);
     /// }
     /// ```
     ///
@@ -441,7 +441,7 @@ impl <T: Copy, const N: usize> vec <T, N> {
     /// use rokoko::prelude::*;
     ///
     /// let vec = ivec2::from_array([4, 16]);
-    /// assert!(vec.apply_binary_bool(|e| e % 2 == 0));
+    /// assert!(vec.apply_unary_bool(|e| e % 2 == 0));
     /// ```
     ///
     #[nightly(const(F: Fn(T) -> bool))]

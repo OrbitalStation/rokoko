@@ -14,7 +14,7 @@ default = ["math"]
 #
 # Adds `const` qualifier to some functions.
 #
-# Requires nightly rust.
+# Requires nightly Rust.
 #
 nightly = ["rokoko-macro/nightly"]
 
