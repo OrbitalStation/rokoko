@@ -2,7 +2,7 @@
 
 )), no_std)]
 
-#![cfg_attr(feature = "nightly", feature(
+#![cfg_attr(nightly, feature(
     const_trait_impl,
     const_mut_refs,
     const_ptr_read,
@@ -18,12 +18,12 @@
 ))]
 
 extern crate cfg_if;
-extern crate rokoko_macro;
-extern crate alloc;
+pub extern crate rokoko_macro;
 
-pub(crate) use rokoko_macro::nightly;
+pub use rokoko_macro::nightly;
 
 #[cfg(feature = "component")]
 pub mod component;
 pub mod math;
+
 pub mod prelude;

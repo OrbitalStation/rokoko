@@ -12,7 +12,5 @@ features = ["full"]
 optional = true
 
 [features]
-#
-# Switch `nightly*` macro mode
-#
+# Switch `nightly` mode
 nightly = ["dep:syn"]

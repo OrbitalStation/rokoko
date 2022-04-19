@@ -4,6 +4,25 @@
 //! The `vec` type is a type with properties similar to those
 //! of `GLSL vec`.
 //!
+//! # WARNING(On Nightly)
+//!
+//! To use a `const` fn/trait impl of `nightly` Rust, for example this:
+//! ```rust,nightly,compile_fail
+//! use rokoko::prelude::*;
+//!
+//! const VEC: ivec2 = ivec2::from([1, 2]);
+//! ```
+//! You need to enable corresponding feature, or else it won't compile!!!
+//!
+//! ```rust,nightly
+//! // `from` is fn from `From` trait, so `const_trait_impl` here
+//! #![feature(const_trait_impl)]
+//!
+//! use rokoko::prelude::*;
+//!
+//! const VEC: ivec2 = ivec2::from([1, 2]);
+//! ```
+//!
 //! # Examples
 //!
 //! ```rust

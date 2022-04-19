@@ -5,18 +5,17 @@ version = "0.0.0"
 [dependencies]
 cfg-if = "1"
 
-[dependencies.rokoko-macro]
+# If toolchain is `nightly` then use `nightly` feature of `rokoko-macro`
+[target.'cfg(nightly)'.dependencies.rokoko-macro]
+path = "rokoko-macro"
+features = ["nightly"]
+
+# Otherwise
+[target.'cfg(not(nightly))'.dependencies.rokoko-macro]
 path = "rokoko-macro"
 
 [features]
 default = ["math", "component"]
-
-#
-# Adds `const` qualifier to some functions.
-#
-# Requires nightly Rust.
-#
-nightly = ["rokoko-macro/nightly"]
 
 #
 # Provides convenient mathematical types, functions, etc.
@@ -28,3 +27,6 @@ math = []
 # for convenient turning on/off fields of structs.
 #
 component = []
+
+[build-dependencies]
+rustc_version = "0.4"
