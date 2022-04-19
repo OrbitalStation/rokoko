@@ -9,7 +9,7 @@ cfg-if = "1"
 path = "rokoko-macro"
 
 [features]
-default = ["math"]
+default = ["math", "component"]
 
 #
 # Adds `const` qualifier to some functions.
@@ -22,3 +22,9 @@ nightly = ["rokoko-macro/nightly"]
 # Provides convenient mathematical types, functions, etc.
 #
 math = []
+
+#
+# Provides structs `Empty`, `With` and trait `Component`
+# for convenient turning on/off fields of structs.
+#
+component = []

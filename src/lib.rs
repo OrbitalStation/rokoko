@@ -10,6 +10,7 @@
     const_deref,
     const_refs_to_cell,
     const_convert,
+    const_type_id,
     auto_traits,
     negative_impls,
     unboxed_closures,
@@ -22,5 +23,7 @@ extern crate alloc;
 
 pub(crate) use rokoko_macro::nightly;
 
+#[cfg(feature = "component")]
+pub mod component;
 pub mod math;
 pub mod prelude;

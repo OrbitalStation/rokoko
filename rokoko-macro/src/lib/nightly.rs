@@ -202,9 +202,7 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
                         '('..')',
                         '['..']',
                         '{'..'}',
-                        '<'..'>',
-                        '\''..'\'',
-                        '"'..'"'
+                        '<'..'>'
                     ],
                     |req| {
                         if req.is_empty() {
@@ -264,7 +262,7 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
                 Ok(i) => {
                     assert!(i.trait_.is_some(), "cannot make non-trait impl `const`");
                     let i = i.to_token_stream().to_string();
-                    let generics = Generics::find(&i).unwrap_or_default();
+                    let generics = Generics::find(&i[..i.find("for").unwrap()]).unwrap_or_default();
                     let t = if generics.exist() {
                         generics.close + 1
                     } else {

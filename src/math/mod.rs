@@ -13,6 +13,9 @@ cfg_if::cfg_if! {
         pub mod vec;
     } else {
         /// Stub.
-        pub type vec <T, const N: usize> = [T; N];
+        pub mod vec {
+            /// Stub.
+            pub type vec <T, const N: usize> = [T; N];
+        }
     }
 }
