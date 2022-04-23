@@ -39,6 +39,41 @@ impl <T: Copy, const N: usize> Into <[T; N]> for vec <T, N> {
     }
 }
 
+#[cfg(feature = "window")]
+/// This module provides conversions between `vec` and types from `winit`
+mod window_conversions {
+    use winit::dpi::{PhysicalSize, PhysicalPosition, LogicalSize, LogicalPosition};
+    use super::{vec, nightly};
+
+    macro_rules! impls {
+        ($( $size:ident $pos:ident ),*) => {$(
+            impls!(@ $size, width, height);
+            impls!(@ $pos, x, y);
+        )*};
+
+        (@ $t:ident, $a:ident, $b:ident) => {
+            #[nightly(const)]
+            impl <T: Copy> From <$t <T>> for vec <T, 2> {
+                #[inline]
+                fn from(x: $t <T>) -> Self {
+                    Self([x.$a, x.$b])
+                }
+            }
+
+            #[nightly(const)]
+            impl <T: Copy> From <vec <T, 2>> for $t <T> {
+                #[inline]
+                fn from(x: vec <T, 2>) -> Self {
+                    let x: (T, T) = x.into();
+                    Self::new(x.0, x.1)
+                }
+            }
+        };
+    }
+
+    impls!(PhysicalSize PhysicalPosition, LogicalSize LogicalPosition);
+}
+
 impl <T, const N: usize> vec <T, N> {
     ///
     /// Returns a reference to an element without bounds checking.

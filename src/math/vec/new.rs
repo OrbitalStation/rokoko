@@ -34,6 +34,13 @@
 //! assert_eq!(fvec3::new(0.1, (), ((), ()), (13.21, (((), ()))), f32::MIN), fvec3::new(0.1, 13.21, f32::MIN));
 //! ```
 //!
+//! # FIXME
+//! There is an idea of replacing all the `From`s here into some sort of `MyFrom`, which is
+//! basically a `From`, but also supports conversion between types that can be converted using `as`
+//! but do not implement `From` between each other.
+//!
+//! Should I implement that or shouldn't, that's the question.
+//!
 
 use crate::nightly;
 use super::super::vec::vec;
@@ -264,7 +271,7 @@ impl <Args: Piece <T>, T: Default + Copy, const N: usize> Fn <Args> for New <T, 
     }
 }
 
-impl <T: Copy, const N: usize> vec <T, N> {
+impl <T: Copy + Default, const N: usize> vec <T, N> {
     ///
     /// For explanations, see [`Piece`].
     ///

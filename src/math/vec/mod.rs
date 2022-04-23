@@ -6,7 +6,7 @@
 //!
 //! # WARNING(On Nightly)
 //!
-//! To use a `const` fn/trait impl of `nightly` Rust, for example this:
+//! To use a `const` fn/trait impl on `nightly` Rust, for example this:
 //! ```rust,nightly,compile_fail
 //! use rokoko::prelude::*;
 //!
@@ -45,6 +45,7 @@
 mod ops;
 
 pub mod new;
+
 pub mod alias;
 pub use self::alias::*;
 

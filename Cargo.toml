@@ -4,6 +4,11 @@ version = "0.0.0"
 
 [dependencies]
 cfg-if = "1"
+# vulkano = "0.29"
+
+[dependencies.winit]
+version = "0.26"
+optional = true
 
 # If toolchain is `nightly` then use `nightly` feature of `rokoko-macro`
 [target.'cfg(nightly)'.dependencies.rokoko-macro]
@@ -15,18 +20,22 @@ features = ["nightly"]
 path = "rokoko-macro"
 
 [features]
-default = ["math", "component"]
+default = ["math", "window"]
 
-#
 # Provides convenient mathematical types, functions, etc.
-#
 math = []
 
+# Provides `window` ecosystem and everything connected to it
 #
-# Provides structs `Empty`, `With` and trait `Component`
-# for convenient turning on/off fields of structs.
-#
-component = []
+# Requires nightly Rust.
+window = ["dep:winit"]
+
+# Allows to use `Vulkan` as a backend in graphic apps
+# backend-vulkan = []
+
+# Allows to use `OpenGL` as a backend in graphic apps
+# backend-opengl = []
 
 [build-dependencies]
 rustc_version = "0.4"
+# vulkano = "0.29"

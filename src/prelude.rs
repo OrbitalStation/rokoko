@@ -6,3 +6,9 @@ cfg_if! {
         pub use math::vec::alias::*;
     }
 }
+
+cfg_if! {
+    if #[cfg(feature = "window")] {
+        pub use window::Window;
+    }
+}

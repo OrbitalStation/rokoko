@@ -260,16 +260,22 @@ pub fn nightly(args: TokenStream, input: TokenStream) -> TokenStream {
             Err(_) => match syn::parse_macro_input::parse::<syn::ItemImpl>(input) {
                 // `input` = impl block
                 Ok(i) => {
-                    assert!(i.trait_.is_some(), "cannot make non-trait impl `const`");
-                    let i = i.to_token_stream().to_string();
-                    let generics = Generics::find(&i[..i.find("for").unwrap()]).unwrap_or_default();
-                    let t = if generics.exist() {
-                        generics.close + 1
+                    let mut code = i.to_token_stream().to_string();
+                    let generics = if i.trait_.is_some() {
+                        // Trait impl
+                        let generics = Generics::find(&code[..code.find("for").unwrap()]).unwrap_or_default();
+                        let t = if generics.exist() {
+                            generics.close + 1
+                        } else {
+                            code.find("impl").unwrap() + 4
+                        };
+                        code = code[..t].to_string() + " const" + &code[t..];
+                        generics
                     } else {
-                        i.find("impl").unwrap() + 4
+                        // No trait
+                        Generics::find(code[code.find("impl").unwrap() + 4..].trim()).unwrap_or_default()
                     };
-                    let result = i[..t].to_string() + " const" + &i[t..];
-                    parse_and_add_requirements(result, generics)
+                    parse_and_add_requirements(code, generics)
                 },
                 // Neither `fn` nor `impl`
                 Err(e) => TokenStream::from(e.to_compile_error())

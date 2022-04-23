@@ -14,7 +14,15 @@ cfg_if::cfg_if! {
     } else {
         /// Stub.
         pub mod vec {
+            ///
+            /// Aliases could be used even without `math` feature, so they do.
+            ///
+            #[path = "../vec/alias.rs"]
+            pub mod alias;
+            pub use self::alias::*;
+
             /// Stub.
+            #[allow(non_camel_case_types)]
             pub type vec <T, const N: usize> = [T; N];
         }
     }

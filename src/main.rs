@@ -1,7 +1,6 @@
 extern crate rokoko;
 
 use rokoko::prelude::*;
-
 /*
 use rokoko::prelude::*;
 
@@ -16,22 +15,28 @@ fn main() {
     ]).color(Color::RED);
 
     WindowBuilder::new()
-        .max_size()
+        .maximized()
         .title("Window")
-        .events(Events::new()
-            .on_close(Window::close)
-            .on_init(move |window| {
-                window
-                    .commands()
-                    .clear(Color::Blue)
-                    .draw(&triangle)
-                    .flush();
-            }))
-        .create().await;
+        .on_init(move |window| window
+            .commands()
+            .clear(Color::Blue)
+            .draw(&triangle)
+            .flush())
+        .create()
+        .unwrap();
 }
 
 */
 
 fn main() {
-
+    Window::new()
+        .title("")
+        .size((1000., 1000.).into())
+        .on_init(|_| println!("Initialization completed!"))
+        .on_close(|w| {
+            println!("Closing!");
+            w.close()
+        })
+        .create()
+        .unwrap()
 }

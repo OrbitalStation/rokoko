@@ -1,6 +1,4 @@
-#![cfg_attr(not(any(
-
-)), no_std)]
+#![cfg_attr(not(std), no_std)]
 
 #![cfg_attr(nightly, feature(
     const_trait_impl,
@@ -17,13 +15,21 @@
     fn_traits
 ))]
 
-extern crate cfg_if;
-pub extern crate rokoko_macro;
+#[cfg(std)]
+pub(crate) use std as core;
 
+extern crate cfg_if;
+
+#[cfg(feature = "window")]
+extern crate winit;
+
+#[doc(hidden)]
+pub extern crate rokoko_macro;
 pub use rokoko_macro::nightly;
 
-#[cfg(feature = "component")]
-pub mod component;
+#[cfg(feature = "window")]
+pub mod window;
+
 pub mod math;
 
 pub mod prelude;

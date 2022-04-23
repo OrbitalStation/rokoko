@@ -322,7 +322,7 @@ impl <T: {from_tuple_bounds}, {tuple_copy}> From <({tuple})> for vec <T, {i}> {{
         "));
 
         tuple.push_str(&format!("T{i},"));
-        piece_bounds.push_str(&format!("T{i}: ~const Piece <T>,"));
+        piece_bounds.push_str(&format!("T{i}: ~const Piece <T> + Copy,"));
         piece_embed_expr.push_str(&format!("self.{i}.embed(offset(place, {piece_n_size}));"));
         piece_n_size.push_str(&format!("+ T{i}::N"));
         from_t.push_str(&format!("T{i}: From <T>,"));
