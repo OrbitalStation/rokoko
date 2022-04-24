@@ -1,5 +1,7 @@
 extern crate rokoko;
+extern crate raw_window_handle;
 
+use raw_window_handle::HasRawWindowHandle;
 use rokoko::prelude::*;
 /*
 use rokoko::prelude::*;
@@ -30,9 +32,8 @@ fn main() {
 
 fn main() {
     Window::new()
-        .title("")
         .size((1000., 1000.).into())
-        .on_init(|_| println!("Initialization completed!"))
+        .on_init(|w| println!("Initialization completed! Handle = {:?}", w.raw_window_handle()))
         .on_close(|w| {
             println!("Closing!");
             w.close()

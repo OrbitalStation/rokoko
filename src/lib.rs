@@ -23,6 +23,9 @@ extern crate cfg_if;
 #[cfg(feature = "window")]
 extern crate winit;
 
+#[cfg(feature = "window")]
+extern crate raw_window_handle;
+
 #[doc(hidden)]
 pub extern crate rokoko_macro;
 pub use rokoko_macro::nightly;

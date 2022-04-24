@@ -27,7 +27,7 @@ use crate::{
 };
 use super::{
     Window, UserEvent,
-    data::WindowData
+    data::{WindowData, WinitRef}
 };
 use winit::{
     error::OsError,
@@ -238,10 +238,11 @@ config! {
 
                 let event_loop = EventLoop::with_user_event();
 
-                let _w = wb.build(&event_loop)?;
+                let w = wb.build(&event_loop)?;
 
                 let mut window = WindowData {
-                    proxy: event_loop.create_proxy()
+                    proxy: event_loop.create_proxy(),
+                    winit: WinitRef::new(&w)
                 };
 
                 let window_ref = Window::from(&mut window);

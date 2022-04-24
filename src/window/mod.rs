@@ -398,6 +398,7 @@ pub mod data;
 use self::data::{WindowData, UserEvent};
 
 use core::ptr::NonNull;
+use raw_window_handle::RawWindowHandle;
 
 ///
 /// The main type of the module.
@@ -426,6 +427,12 @@ impl Window {
     ///
     pub fn close(self) {
        self.data().proxy.send_event(UserEvent::Close).expect("window must be opened to be closed")
+    }
+}
+
+unsafe impl raw_window_handle::HasRawWindowHandle for Window {
+    fn raw_window_handle(&self) -> RawWindowHandle {
+        self.data().winit.get().raw_window_handle()
     }
 }
 
