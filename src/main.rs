@@ -34,6 +34,7 @@ fn main() {
     Window::new()
         .size((1000., 1000.).into())
         .on_init(|w| println!("Initialization completed! Handle = {:?}", w.raw_window_handle()))
+        .on_exit(|_| println!("Dropping!"))
         .on_close(|w| {
             println!("Closing!");
             w.close()

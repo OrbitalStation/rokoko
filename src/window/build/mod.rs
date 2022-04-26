@@ -137,7 +137,10 @@ config! {
         /// Default behaviour is that if `.on_close` is not specified then window will be simply closed
         ///
         /// ## Note
-        /// If you specify `.on_close` multiple times only the very first one will be used
+        /// If you specify `.on_close` multiple times only the very last one will be used
+        ///
+        /// ## Note
+        /// See also [`WindowBuilder::on_exit`]
         ///
         /// ## Examples
         /// With logging:
@@ -185,7 +188,7 @@ config! {
         /// `.on_init <F: FnMut(Window)> (F)` -> sets a callback that will be called when the window is created.
         ///
         /// ## Note
-        /// If you specify `.on_init` multiple times only the very first one will be used
+        /// If you specify `.on_init` multiple times only the very last one will be used
         ///
         /// ## Examples
         /// With logging:
@@ -204,7 +207,44 @@ config! {
         ///     });
         /// ```
         ///
-        on_init(Window), OnInit, OnInitTrait
+        on_init(Window), OnInit, OnInitTrait,
+
+        ///
+        /// ## Signature
+        /// `.on_exit <F: FnMut(Window)> (F)` -> sets a callback that will be called when the `Window::close` function
+        /// is called.
+        ///
+        /// ## Note
+        /// No other callback is called after that one, so it is useful to work as a destructor
+        ///
+        /// ## Note
+        /// If you specify `.on_exit` multiple times only the very last one will be used
+        ///
+        /// ## Note
+        /// See also [`WindowBuilder::on_close`]
+        ///
+        /// ## Examples
+        /// ```
+        /// # use rokoko::window::Window;
+        /// struct DropMe;
+        ///
+        /// impl Drop for DropMe {
+        ///     fn drop(&mut self) {
+        ///         println!("Dropping!")
+        ///     }
+        /// }
+        ///
+        /// let to_be_dropped = DropMe;
+        ///
+        /// Window::new()
+        ///     .on_exit(move |_| {
+        ///         // SAFETY: nothing else can use `to_be_dropped` after that callback
+        ///         // so dropping it here is safe
+        ///         drop(unsafe { core::ptr::read(&to_be_dropped) })
+        ///     });
+        /// ```
+        ///
+        on_exit(Window), OnExit, OnExitTrait
 
     'impl:
         impl <C: Config> WindowBuilder <C> {
@@ -259,7 +299,12 @@ config! {
 
                     match event {
                         Event::UserEvent(event) => match event {
-                            UserEvent::Close => *control_flow = ControlFlow::Exit
+                            UserEvent::Close => {
+                                if let Some(cb) = data.on_exit() {
+                                    cb(window_ref)
+                                }
+                                *control_flow = ControlFlow::Exit
+                            }
                         },
                         Event::WindowEvent {
                             event: WindowEvent::CloseRequested,

@@ -45,6 +45,30 @@ impl <ID: Callback, F: FnMut <ID::Args, Output = ID::Output>, N> const GetFn <ID
     }
 }
 
+// /// Represents `true`
+// pub struct True;
+//
+// /// Represents `false`
+// pub struct False;
+//
+// /// Does a type list contains a specified `ID`
+// pub trait HasFn <ID: Callback> {
+//     /// [`True`] if contains, [`False`] otherwise
+//     type Has;
+// }
+//
+// impl <ID: Callback> HasFn <ID> for Empty {
+//     type Has = False;
+// }
+//
+// impl <ID: Callback, CID, Args, F: FnMut <Args>, N: HasFn <ID>> const HasFn <ID> for With <FnContainer <CID, Args, F>, N> where Equality <ID, CID>: NotEq {
+//     type Has = N::Has;
+// }
+//
+// impl <ID: Callback, F: FnMut <ID::Args, Output = ID::Output>, N> HasFn <ID> for With <FnContainer <ID, ID::Args, F>, N> {
+//     type Has = True;
+// }
+
 /// Used to obtain data-like info
 pub trait GetData <T> {
     /// Returns info(if is contained)

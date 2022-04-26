@@ -22,7 +22,7 @@ impl WinitRef {
 
     pub const fn get(&self) -> &Winit {
         // SAFETY: safe because creation is only possible through `new` which
-        // guarantee correctness
+        // guarantees correctness
         unsafe { &*(self.0.get() as *const Winit) }
     }
 }
