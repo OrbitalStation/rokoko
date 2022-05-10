@@ -24,11 +24,9 @@ use super::{
     data::{WindowData, WinitRef}
 };
 use winit::{
-    error::OsError,
-    window::WindowBuilder as WinitWindowBuilder,
     event_loop::{EventLoop, ControlFlow},
     event::{Event, WindowEvent},
-    dpi::{PhysicalSize, LogicalSize, Size as WinitSize}
+    dpi::{PhysicalSize, LogicalSize}
 };
 
 ///
@@ -54,11 +52,13 @@ rokoko_macro::window_builder_data! {
     ///     .title("Some custom title");
     /// ```
     ///
+    #[default = "rokoko window"]
+    #[usage = .with_title(title)]
     title: &str,
 
     ///
     /// ## Signature
-    /// `.size(vec2)` -> specifies dimensions of the window.
+    /// `.size(impl Into <vec2>)` -> specifies dimensions of the window.
     ///
     /// ## Default
     /// Default is some platform-dependent preset dimensions.
@@ -82,6 +82,15 @@ rokoko_macro::window_builder_data! {
     ///     .size((1000., 1000.));
     /// ```
     ///
+    #[conflict = maximized]
+    #[usage = .with_inner_size(if data.size_is_logical().is_some() {
+        winit::dpi::Size::Logical(LogicalSize::from(size).cast())
+    } else {
+        winit::dpi::Size::Physical(PhysicalSize {
+            width: size[0] as _,
+            height: size[1] as _
+        })
+    })]
     size: vec2,
 
     ///
@@ -99,6 +108,8 @@ rokoko_macro::window_builder_data! {
     ///     .maximized();
     /// ```
     ///
+    #[conflict = size]
+    #[usage = .with_maximized(true)]
     maximized,
 
     ///
@@ -118,6 +129,7 @@ rokoko_macro::window_builder_data! {
     ///     .size_is_logical();
     /// ```
     ///
+    #[require = size]
     size_is_logical
 }
 
@@ -175,7 +187,9 @@ rokoko_macro::window_builder_events! {
     ///     .on_close(|_| println!("Haha, you cannot close me!"));
     /// ```
     ///
-    on_close(Window),
+    #[on = Event::WindowEvent { event: WindowEvent::CloseRequested, .. }]
+    #[default = window.close()]
+    on_close(window: Window),
 
     ///
     /// ## Signature
@@ -201,7 +215,8 @@ rokoko_macro::window_builder_events! {
     ///     });
     /// ```
     ///
-    on_init(Window),
+    #[unique = "init"]
+    on_init(window: Window),
 
     ///
     /// ## Signature
@@ -238,89 +253,11 @@ rokoko_macro::window_builder_events! {
     ///     });
     /// ```
     ///
-    on_exit(Window)
+    #[on = Event::UserEvent(UserEvent::Close)]
+    on_exit(window: Window)
 }
 
-#[rokoko_macro::window_builder_create]
-impl <C: Config> WindowBuilder <C> {
-    pub fn create(self) -> Result <(), OsError> {
-        let Self(mut data) = self;
-
-        let mut wb = WinitWindowBuilder::new().with_title(if let Some(Title(title)) = data.title() {
-            title
-        } else {
-            "rokoko window"
-        });
-
-        if let Some(Size(size)) = data.size() {
-            assert!(data.maximized().is_none(), "cannot have both `size` and `maximized`");
-
-            wb = wb.with_inner_size(if let Some(SizeIsLogical) = data.size_is_logical() {
-                WinitSize::Logical(LogicalSize::from(*size).cast())
-            } else {
-                WinitSize::Physical(PhysicalSize {
-                    width: size[0] as _,
-                    height: size[1] as _
-                })
-            })
-        } else if let Some(_) = data.size_is_logical() {
-            panic!("cannot have specification that `size` is logical without specification of the `size` itself")
-        }
-
-        if data.maximized().is_some() {
-            wb = wb.with_maximized(true)
-        }
-
-        let event_loop = EventLoop::with_user_event();
-
-        let w = wb.build(&event_loop)?;
-
-        let mut window = WindowData {
-            proxy: event_loop.create_proxy(),
-            winit: WinitRef::new(&w)
-        };
-
-        let window_ref = Window::from(&mut window);
-
-        if let Some(cb) = data.on_init() {
-            cb(window_ref)
-        }
-
-        event_loop.run(move |event, _, control_flow| {
-            if *control_flow == ControlFlow::Exit {
-                return
-            }
-            *control_flow = ControlFlow::Wait;
-
-            match event {
-                Event::UserEvent(event) => match event {
-                    UserEvent::Close => {
-                        if let Some(cb) = data.on_exit() {
-                            cb(window_ref)
-                        }
-                        *control_flow = ControlFlow::Exit
-                    }
-                },
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => if let Some(cb) = data.on_close() {
-                    cb(window_ref)
-                } else {
-                    window_ref.close()
-                },
-                _ => ()
-            }
-        })
-    }
-}
-
-// config! {
-//     'data:
-//     'events:
-//     'impl:
-//
-// }
+rokoko_macro::window_builder_create!();
 
 impl WindowBuilder {
     ///
@@ -355,9 +292,9 @@ impl <C> WindowBuilder <C> {
 /// but does not forbid types of different sizes/containing
 /// generics.
 ///
-/// Does not call `from`'s `Drop`(if exists).
+/// Does not call `from`'s `Drop`(if it exists).
 ///
-/// The latter allows to cast [`WindowBuilder`] into its generic `C`.
+/// The latter allows to conveniently cast [`WindowBuilder`] into its generic `C`.
 ///
 #[doc(hidden)]
 pub const unsafe fn transmute <F, T> (from: F) -> T {

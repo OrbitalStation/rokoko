@@ -6,8 +6,7 @@
 /// Describes data to be added to `WindowBuilder`.
 ///
 /// # Side effects
-///
-/// Adds data to `TRAITS` & `LIFETIMES` in `wb_statics`
+/// Affects statics in `wb_statics`
 ///
 /// # Example
 ///
@@ -67,10 +66,12 @@ pub fn window_builder_data(input: TokenStream) -> TokenStream {
 
     for field in fields {
         let Data {
-            attrs,
+            mut attrs,
             ident,
             ty
         } = field;
+
+        wb_statics::Data::add(ident.clone(), ty.is_none(), &mut attrs);
 
         let (inner, braced_lifetimes, lifetimes) = if ty.is_some() {
             let mut lifetimes = String::new();
@@ -166,8 +167,7 @@ impl <C> WindowBuilder <C> {{
 /// Describes events to be added to `WindowBuilder`.
 ///
 /// # Side effects
-///
-/// Adds data to `TRAITS` in `wb_statics`
+/// Affects statics in `wb_statics`
 ///
 /// # Example
 ///
@@ -185,16 +185,21 @@ pub fn window_builder_events(input: TokenStream) -> TokenStream {
         __private::ToTokens
     };
 
-    /// A type that have a name during parsing but loses it later
-    struct TypeWithName(Box <Type>);
+    /// A name with bound type
+    struct Variable {
+        name: String,
+        ty: Box <Type>
+    }
 
-    impl Parse for TypeWithName {
+    impl Parse for Variable {
         fn parse(input: ParseStream) -> syn::Result <Self> {
-            if input.peek2(Token![:]) {
-                let _: Ident = input.parse()?;
-                let _: Token![:] = input.parse()?;
-            }
-            Ok(Self(Box::new(input.parse()?)))
+            let name = input.parse::<Ident>()?.to_string();
+            let _: Token![:] = input.parse()?;
+            let ty: Box <Type> = Box::new(input.parse()?);
+            Ok(Self {
+                name,
+                ty
+            })
         }
     }
 
@@ -202,7 +207,7 @@ pub fn window_builder_events(input: TokenStream) -> TokenStream {
     struct Callback {
         attrs: Vec <Attribute>,
         ident: String,
-        args: Punctuated <TypeWithName, Token![,]>,
+        args: Punctuated <Variable, Token![,]>,
         ret: ReturnType
     }
 
@@ -241,11 +246,13 @@ pub fn window_builder_events(input: TokenStream) -> TokenStream {
 
     for cb in cbs {
         let Callback {
-            attrs,
+            mut attrs,
             ident,
             args,
             ret
         } = cb;
+
+        wb_statics::Callback::add(ident.clone(), args.iter().map(|p| p.name.clone()).collect::<Vec <_>>().join(","), &mut attrs);
 
         let cb_ty = tools::snake_to_upper_case(&ident);
 
@@ -266,7 +273,7 @@ pub fn window_builder_events(input: TokenStream) -> TokenStream {
 
         let args = args
             .into_iter()
-            .map(|TypeWithName(ty)| ty.to_token_stream().to_string())
+            .map(|Variable { ty, .. }| ty.to_token_stream().to_string())
             .collect::<Vec<_>>()
             .join(",");
 
@@ -303,28 +310,204 @@ impl <C> WindowBuilder <C> {{
 }
 
 ///
-/// Transforms `C: Config` on impl to set of all traits created by
-/// `data` and `events` sections
+/// Constructs all data & events into a single `WindowBuilder::create` method.
 ///
 /// # Side effects
+/// Affects statics in `wb_statics`
 ///
-/// Flushes both `TRAITS` & `LIFETIMES` in `wb_statics`
-///
-#[proc_macro_attribute]
-#[doc(hidden)]
-pub fn window_builder_create(_: TokenStream, input: TokenStream) -> TokenStream {
-    const CONFIG: &'static str = "Config";
-    const CFG_LEN: usize = CONFIG.len();
+#[proc_macro]
+pub fn window_builder_create(_: TokenStream) -> TokenStream {
+    ///
+    /// A pair of usizes.
+    ///
+    /// The main feature of `Pair` is that `Pair(a, b) == Pair(b, a)`,
+    /// i.e. order of members does not matter
+    ///
+    #[derive(Debug, Eq)]
+    struct Pair {
+        a: usize,
+        b: usize
+    }
 
-    let mut input = input.to_string();
+    impl Pair {
+        pub const fn new(a: usize, b: usize) -> Self {
+            Self { a, b }
+        }
+    }
 
-    let generics = input.find('<').unwrap() + 1;
-    let c = input.find(CONFIG).unwrap();
-    input.drain(c..c + CFG_LEN);
+    impl PartialEq for Pair {
+        fn eq(&self, other: &Self) -> bool {
+            (self.a == other.a && self.b == other.b)
+            || (self.a == other.b && self.b == other.a)
+        }
+    }
 
-    input.insert_str(c, &wb_statics::traits());
-    input.insert_str(c, "'static +");
-    input.insert_str(generics, &wb_statics::lifetimes());
+    /// Represents a `#[conflict]` between data
+    #[derive(Debug)]
+    struct Conflict {
+        pair: Pair,
+        /// Trick: if `met` == 2 then both in pair respect it
+        met: u8
+    }
 
-    input.parse().unwrap()
+    let lifetimes = wb_statics::lifetimes();
+    let traits = wb_statics::traits();
+
+    let mut data = String::new();
+    let full = wb_statics::Data::get();
+    let mut conflicts_to_be_checked = Vec::new();
+    let mut conflicts = String::new();
+    let mut requirements = String::new();
+
+    for (idx, one) in full.iter().enumerate() {
+        let lower = &one.lower;
+
+        // Usage
+        let usage = &one.usage;
+
+        if !usage.is_empty() {
+            let (wrapper, deref) = if one.short {
+                (String::from("_"), String::new())
+            } else {
+                let upper = tools::snake_to_upper_case(&*lower);
+                (format!("{upper}({lower})"), format!("let {lower} = *{lower};"))
+            };
+
+            let else_branch = if one.default.is_empty() {
+                String::new()
+            } else {
+                let default = &one.default;
+                format!("
+else {{
+    let {lower} = {default};
+    builder = builder{usage}
+}}
+                ")
+            };
+
+            data.push_str(&format!("
+if let Some({wrapper}) = data.{lower}() {{
+    {deref}
+    builder = builder{usage}
+}} {else_branch}
+            "))
+        }
+
+        // Requirements
+        for require in &one.require {
+            requirements.push_str(&format!(r#"assert!(data.{lower}().is_none() || data.{require}().is_some(), "{lower} requires {require}, which is not specified");"#));
+        }
+
+        // Conflicts
+        for conflict in &one.conflict {
+            let pair = Pair::new(idx, full
+                .iter()
+                .enumerate()
+                .find(|(_, p)| p.lower == *conflict)
+                .expect("no such data")
+                .0);
+            if let Some(c) = conflicts_to_be_checked.iter_mut().find(|p: &&mut Conflict| p.pair == pair) {
+                c.met += 1
+            } else {
+                conflicts.push_str(&format!(r#"assert!(data.{conflict}().is_none() || data.{lower}().is_none(), "cannot have both `{conflict}` and `{lower}`");"#));
+                conflicts_to_be_checked.push(Conflict {
+                    pair,
+                    met: 1
+                })
+            }
+        }
+    }
+
+    for conflict in conflicts_to_be_checked {
+        if conflict.met != 2 {
+            panic!("only one of `{}`, `{}` specifies that they conflict", full[conflict.pair.a].lower, full[conflict.pair.b].lower)
+        }
+    }
+
+    let mut events = String::new();
+    let full = wb_statics::Callback::get();
+    let mut unique_init = String::new();
+
+    for one in &full {
+        let lower = &one.lower;
+        let args = &one.args;
+
+        if one.unique == "init" {
+            unique_init = format!("
+if let Some(cb) = data.{lower}() {{
+    cb({args})
+}}
+            ")
+        } else if !one.unique.is_empty() {
+            panic!("unknown value for #[unique] = {}", one.unique)
+        } else {
+            let on = &one.on;
+            let else_branch = if one.default.is_empty() {
+                String::new()
+            } else {
+                let default = &one.default;
+                format!("
+else {{
+    {default}
+}}
+                ")
+            };
+            let call = format!("
+if let Some(cb) = data.{lower}() {{
+    cb({args})
+}} {else_branch}
+            ");
+            let branch = if on.find("UserEvent :: Close").is_some() {
+                format!("{{
+{call}
+*cf = ControlFlow::Exit
+                }}")
+            } else {
+                call
+            };
+            events.push_str(&format!("
+{on} => {branch},
+            "))
+        }
+    }
+
+    let k =format!("
+impl <{lifetimes} C: 'static + {traits}> WindowBuilder <C> {{
+    pub fn create(self) -> Result <(), winit::error::OsError> {{
+        let Self(mut data) = self;
+
+        let mut builder = winit::window::WindowBuilder::new();
+
+        {data}
+
+        {requirements}
+
+        let event_loop = EventLoop::with_user_event();
+
+        let winit_window = builder.build(&event_loop)?;
+
+        let mut window_data = WindowData {{
+            proxy: event_loop.create_proxy(),
+            winit: WinitRef::new(&winit_window)
+        }};
+
+        let window = Window::from(&mut window_data);
+
+        {unique_init}
+
+        event_loop.run(move |event, _, cf| {{
+            if *cf == ControlFlow::Exit {{
+                return
+            }}
+            *cf = ControlFlow::Wait;
+
+            match event {{
+                {events}
+                _ => ()
+            }}
+        }})
+    }}
+}}
+    ");println!("{k}");
+    k.parse().unwrap()
 }
