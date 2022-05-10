@@ -145,21 +145,7 @@ pub fn impl_bin_ops_for_vec(input: TokenStream) -> TokenStream {
 
     impl CaseVariant {
         pub fn from_small(small: String) -> Self {
-            ///
-            /// Capitalize the string.
-            ///
-            /// # Examples
-            ///
-            /// ```rust,norun
-            /// assert_eq!(capitalize("pork"), "Pork".to_string())
-            /// ```
-            ///
-            fn capitalize(s: &str) -> String {
-                let (first, rest) = s.split_at(s.chars().next().unwrap().len_utf8());
-                first.to_uppercase() + rest
-            }
-
-            let mut big = capitalize(&small);
+            let mut big = tools::capitalize(&small);
 
             // I know it is veeeery bad to do such a thing,
             // but it works *here* and `impl_bin_ops_for_vec`
@@ -167,7 +153,7 @@ pub fn impl_bin_ops_for_vec(input: TokenStream) -> TokenStream {
             // *don't touch it while it works* :)
             if big.starts_with("Bit") {
                 let (first, rest) = big.split_at(3);
-                big = first.to_string() + &capitalize(rest)
+                big = first.to_string() + &tools::capitalize(rest)
             }
 
             Self {

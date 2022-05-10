@@ -5,4 +5,7 @@
 
 use proc_macro::*;
 
+pub(crate) mod tools;
+pub(crate) mod wb_statics;
+
 include!("lib/mod.rs");

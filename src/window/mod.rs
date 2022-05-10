@@ -130,7 +130,8 @@
 //!
 //! For example, `[Type1, Type2, Type3]` would look like `With <Type1, With <Type2, With <Type3, Empty>>>`.
 //!
-//! In the end, `With` and `Empty` preserved, but the meaning changed.
+//! In this module `With` serves as a main connector of [`WindowBuilder`]'s additional properties,
+//! such as info, callbacks, data, requests, etc.
 //!
 //! Let's return to the example from the very beginning:
 //! ```no_run
@@ -159,9 +160,8 @@
 //!
 //! The best part is that it is all completely free!
 //!
-//! All these `.on_init` and `.on_close` are embedded at compile-time!
-//!
-//! Furthermore, if, for example, `.on_init` is not specified, it will not be checked for
+//! All these `.on_init` and `.on_close` are embedded at compile-time
+//! and furthermore, if, for example, `.on_init` is not specified, it will not be checked for
 //! in runtime!
 //!
 //! The trick here is that all these `.on_init`, etc. are const functions that produce another type.
@@ -421,9 +421,7 @@ impl Window {
     ///
     /// Closes the window.
     ///
-    /// No other callback is called after that function,
-    ///
-    /// so all the dropping/saving should be completed before.
+    /// Only [`WindowBuilder::on_exit`] is called after this function.
     ///
     pub fn close(self) {
        self.data().proxy.send_event(UserEvent::Close).expect("window must be opened to be closed")
